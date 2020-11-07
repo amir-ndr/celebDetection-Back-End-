@@ -2,13 +2,14 @@ import React,{Component} from 'react';
 import Navigation from './components/Navigation/Navigation';
 import Logo from './components/Logo/Logo';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
+import Name from './components/Name/Name';
 import Rank from './components/Rank/Rank';
 import SignIn from './components/SignIn/SignIn';
 import Register from './components/Register/Register';
 import FaceRecognition from './components/FaceRecognition/FaceRecognition';
 import Particles from 'react-particles-js';
 import Clarifai from 'clarifai';
-import './App.css'
+import './App.css';
 
 const app = new Clarifai.App({
   apiKey: '3f583350f95948069728c8270459577d'
@@ -30,7 +31,7 @@ const par={
 const init={
   input:'',
   imageUrl:'',
-  box:{},
+  celebName:'',
   route:'SignIn',
   isSignedIn:false,
   user: {
@@ -58,22 +59,8 @@ class App extends Component {
     }})
   }
 
-
-  calculateFaceLok=(data)=>{
-    const clarifaiFace=data.outputs[0].data.regions[0].region_info.bounding_box;
-    const image=document.getElementById('inputimage');
-    const width = Number(image.width);
-    const height = Number(image.height);
-    return{
-      leftCol:clarifaiFace.left_col*width,
-      topRow:clarifaiFace.top_row*height,
-      rightCol:width-(clarifaiFace.right_col*width),
-      bottomRow:height-(clarifaiFace.bottom_row*height)
-    }
-  }
-
-  displayFaceBox=(box)=>{
-    this.setState({box:box});
+  displayName=(name)=>{
+    this.setState({celebName:name})
   }
 
   onInputChange=(event)=>{
@@ -84,7 +71,7 @@ class App extends Component {
     this.setState({imageUrl: this.state.input});
     app.models
       .predict(
-        Clarifai.FACE_DETECT_MODEL,
+        Clarifai.CELEBRITY_MODEL,
         this.state.input)
       .then(response => {
         if (response) {
@@ -101,7 +88,7 @@ class App extends Component {
             })
 
         }
-        this.displayFaceBox(this.calculateFaceLok(response))
+        this.displayName(response.outputs[0].data.regions[0].data.concepts[0].name)
       })
       .catch(err => console.log(err));
   }
@@ -123,12 +110,13 @@ class App extends Component {
         {this.state.route==='home'
           ? <div>
               <Logo />
+              <Name celebName={this.state.celebName} />
               <Rank name={this.state.user.name}
                 entries={this.state.user.entries}/>
               <ImageLinkForm
                 onInputChange={this.onInputChange}
                 onButtonSubmit={this.onButtonSubmit}/>
-              <FaceRecognition box={this.state.box} imageUrl={this.state.imageUrl}/>
+              <FaceRecognition imageUrl={this.state.imageUrl}/>
             </div>
           :(
             this.state.route==='SignIn'
